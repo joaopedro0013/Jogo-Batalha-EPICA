@@ -68,7 +68,7 @@ public class Batalha {
         System.out.println("Vida da máquina: " + maquina.vida);
         System.out.println("Escolha sua ação:");
         System.out.println("1 - Atacar com arma");
-        System.out.println("2 - Usar poder dano: " + jogador.Poder);
+        System.out.println("2 - Usar poder (dano: " + jogador.Poder+ ")");
 
         int escolha = scanner.nextInt();
         switch (escolha) {
@@ -86,9 +86,9 @@ public class Batalha {
 
     private static Arma escolherArma(Scanner scanner) {
         System.out.println("Escolha sua arma:");
-        System.out.println("1 - Lança Dano:" + new lanca().dano + "Imagem :"  +new lanca().imagem);
-        System.out.println("2 - Espada Dano:" + new Espada().dano + "Imagem :"  +new Espada().imagem);
-        System.out.println("3 - Adaga Dano:" + new Adaga().dano + "Imagem :"  +new Adaga().imagem);
+        System.out.println("1 - Lança (Dano:" + new lanca().dano + " )");
+        System.out.println("2 - Espada (Dano:" + new Espada().dano + " )");
+        System.out.println("3 - Adaga (Dano:" + new Adaga().dano+ " )");
 
         int escolha = scanner.nextInt();
         switch (escolha) {
@@ -137,11 +137,32 @@ public class Batalha {
         defensor.vida -= dano;
         System.out.println(atacante.nameClasse + " atacou com " + arma.tipoArma + " causando " + dano + " de dano.");
         System.out.println(defensor.nameClasse + " Recebeu " + dano + " de dano de arma e está com " + defensor.vida + " de vida.");
-    }
+        System.out.println("===========");
+        }
 
     private static void usarPoder(Classe atacante, Classe defensor) {
+        if (atacante.enegia < 1) {
+            System.out.println("Sem energia suficiente para usar o poder. Escolha outra ação.");
+            return;
+        }
         defensor.vida -= atacante.Poder;
+        atacante.enegia -= 1;
         System.out.println(atacante.nameClasse + " usou seu poder causando " + atacante.Poder + " de dano.");
         System.out.println(defensor.nameClasse + " Recebeu " + atacante.Poder + " de dano do poder e está com " + defensor.vida + " de vida.");
+        System.out.println("===========");
+    }
+
+    private static void usarPoder(Scanner scanner, Classe atacante, Classe defensor) {
+        if (atacante.enegia < 1) {
+            System.out.println("Sem energia suficiente para usar o poder. Escolha outra ação.");
+            turnoJogador(scanner, atacante, defensor);
+            return;
+        }
+        defensor.vida -= atacante.Poder;
+        atacante.enegia -= 1;
+        System.out.println(atacante.nameClasse + " usou seu poder causando " + atacante.Poder + " de dano.");
+        System.out.println(defensor.nameClasse + " Recebeu " + atacante.Poder + " de dano do poder e está com " + defensor.vida + " de vida.");
+        System.out.println("===========");
+        
     }
 }

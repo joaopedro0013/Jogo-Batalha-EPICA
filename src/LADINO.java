@@ -4,6 +4,7 @@ public class LADINO extends Classe{
             this.nameClasse = "LADINO";
             this.vida = 120;
             this.Poder = 40;
-            this.id = 1;
+            this.id = 3;
+            this.enegia = 2;
         }
 }

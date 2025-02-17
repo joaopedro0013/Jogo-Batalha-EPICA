@@ -4,5 +4,6 @@ public class MAGO extends Classe{
         this.vida = 100;
         this.Poder = 50;
         this.id = 2;
+        this.enegia = 3;
     }
 }

@@ -3,4 +3,5 @@ public class Classe {
     int Poder;
     int vida;
     int id;
+    int enegia;
 }
