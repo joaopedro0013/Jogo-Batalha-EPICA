@@ -14,6 +14,7 @@ public class BatalhaGUI extends JFrame {
     public BatalhaGUI() {
         setTitle("Batalha Épica");
         setSize(800, 600); // Aumentar o tamanho da janela
+        setLocationRelativeTo(null); // Centralizar a janela na tela
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -50,6 +51,7 @@ public class BatalhaGUI extends JFrame {
         maquina = escolherPersonagemMaquina();
         outputArea.append("A batalha começou!\n");
         atualizarStatus();
+        iniciarTurnoJogador(); // Iniciar o primeiro turno do jogador
     }
 
     private Classe escolherPersonagem() {
@@ -85,13 +87,26 @@ public class BatalhaGUI extends JFrame {
         }
     }
 
+    private void iniciarTurnoJogador() {
+        outputArea.append("===========\n");
+        outputArea.append("Turno do Jogador\n");
+        outputArea.append("Vida do jogador: " + jogador.vida + "\n");
+        outputArea.append("Vida da Maquina: " + maquina.vida + "\n");
+        atacarButton.setEnabled(true);
+        usarPoderButton.setEnabled(true);
+
+    }
+
     private void turnoJogador(int acao) {
+        atacarButton.setEnabled(false);
+        usarPoderButton.setEnabled(false);
         if (acao == 1) {
             Arma arma = escolherArma();
             if (arma != null) {
                 atacar(jogador, maquina, arma);
             } else {
-                return; // Voltar para a janela de seleção entre usar o poder ou usar uma arma
+                iniciarTurnoJogador(); // Voltar para a janela de seleção entre usar o poder ou usar uma arma
+                return;
             }
         } else if (acao == 2) {
             usarPoder(jogador, maquina);
@@ -100,6 +115,9 @@ public class BatalhaGUI extends JFrame {
             turnoMaquina();
         }
         atualizarStatus();
+        if (jogador.vida > 0 && maquina.vida > 0) {
+            iniciarTurnoJogador(); // Iniciar o próximo turno do jogador
+        }
     }
 
     private Arma escolherArma() {
