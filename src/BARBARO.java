@@ -5,6 +5,10 @@ public class BARBARO extends Classe{
         this.Poder = 30;
         this.id = 3;
         this.enegia = 1;
+        this.idArma = 2;
+        this.armadura = 50;
+        this.resistenciaMagica = 50;
+        
     }
 
     @Override

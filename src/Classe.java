@@ -4,4 +4,8 @@ public class Classe {
     int vida;
     int id;
     int enegia;
+    int idArma;
+    int armadura;
+    int resistenciaMagica;
+    
 }

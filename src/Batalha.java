@@ -89,6 +89,7 @@ public class Batalha {
         System.out.println("1 - Lança (Dano:" + new lanca().dano +" )" + " - " + new lanca().imagem);
         System.out.println("2 - Espada (Dano:" + new Espada().dano + " )" + " - " + new Espada().imagem);
         System.out.println("3 - Adaga (Dano:" + new Adaga().dano+ " )" + " - " + new Adaga().imagem);
+        
 
         int escolha = scanner.nextInt();
         switch (escolha) {
