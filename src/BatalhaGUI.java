@@ -3,20 +3,20 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.net.URL;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.Random;
 
 public class BatalhaGUI extends JFrame {
 
-    private JTextPane outputArea; // Use JTextPane instead of JTextArea
-    private JButton atacarButton;
-    private JButton usarPoderButton;
-    private JButton curarButton;
+    private JTextPane outputArea;
     private Classe jogador;
     private Classe maquina;
-    private Font battleFont; // Font for the battle text
+    private Font battleFont;
+    private MundoLivre mundoLivre;
+    private JanelaBatalha janelaBatalhaAtual;
+    private boolean jogoTerminou = false;
+    private boolean ultimaBatalhaIniciada = false;
 
     public BatalhaGUI() {
         setTitle("Batalha Épica");
@@ -25,46 +25,29 @@ public class BatalhaGUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Initialize the font
-        battleFont = new Font("Arial", Font.PLAIN, 16); // You can change the font name, style, and size
+        battleFont = new Font("Arial", Font.PLAIN, 16);
 
-        outputArea = new JTextPane(); // Initialize JTextPane
+        outputArea = new JTextPane();
         outputArea.setEditable(false);
-        outputArea.setFont(battleFont); // Set the font for the output area
-        centerText(); // Center the text
+        outputArea.setFont(battleFont);
+        centerText();
         add(new JScrollPane(outputArea), BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel();
-        atacarButton = new JButton("Atacar com arma");
-        usarPoderButton = new JButton("Usar poder");
-        curarButton = new JButton("Curar");
-        buttonPanel.add(atacarButton);
-        buttonPanel.add(usarPoderButton);
-        buttonPanel.add(curarButton);
-        add(buttonPanel, BorderLayout.SOUTH);
+        mundoLivre = new MundoLivre(this);
+        add(mundoLivre, BorderLayout.CENTER);
 
-        atacarButton.addActionListener(new ActionListener() {
+        // Solicitar foco para MundoLivre após a janela ser visível
+        SwingUtilities.invokeLater(() -> mundoLivre.requestFocusInWindow());
+
+        // Adicionar KeyListener para redirecionar eventos para MundoLivre
+        addKeyListener(new KeyAdapter() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                turnoJogador(1);
+            public void keyPressed(KeyEvent e) {
+                // Forward the key event to the MundoLivre's KeyListener
+                mundoLivre.dispatchEvent(e);
             }
         });
-
-        usarPoderButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                turnoJogador(2);
-            }
-        });
-
-        curarButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                turnoJogador(3);
-            }
-        });
-
-        iniciarBatalha();
+        setFocusTraversalKeysEnabled(false); // Desabilitar o foco padrão
     }
 
     private void centerText() {
@@ -76,35 +59,40 @@ public class BatalhaGUI extends JFrame {
         doc.setParagraphAttributes(0, doc.getLength(), center, false);
     }
 
-    private void appendText(String text, Color color) {
+    public void appendText(String text, Color color) {
         try {
             StyledDocument doc = outputArea.getStyledDocument();
             SimpleAttributeSet attributes = new SimpleAttributeSet();
             StyleConstants.setAlignment(attributes, StyleConstants.ALIGN_CENTER);
             StyleConstants.setFontFamily(attributes, battleFont.getFamily());
             StyleConstants.setFontSize(attributes, battleFont.getSize());
-            StyleConstants.setForeground(attributes, color); // Set the color
+            StyleConstants.setForeground(attributes, color);
             doc.insertString(doc.getLength(), text, attributes);
         } catch (Exception e) {
             System.out.println(e);
         }
     }
 
-    private void appendText(String text) {
-        appendText(text, Color.BLACK); // Default color is black
+    public void appendText(String text) {
+        appendText(text, Color.BLACK);
     }
 
-    private void iniciarBatalha() {
+    public void iniciarBatalha(JanelaBatalha janelaBatalha, MundoLivre.Inimigo inimigo) {
+        this.janelaBatalhaAtual = janelaBatalha;
+
         jogador = escolherPersonagem();
         maquina = escolherPersonagemMaquina();
-        appendText("A batalha começou!\n");
-        atualizarStatus();
-        iniciarTurnoJogador();
+
+        SwingUtilities.invokeLater(() -> {
+            janelaBatalha.appendText("A batalha começou!\n");
+            atualizarStatus(janelaBatalha);
+            iniciarTurnoJogador(janelaBatalha);
+        });
     }
 
-    private Classe escolherPersonagem() {
+    public Classe escolherPersonagem() {
         String[] opcoes = {"BARBARO", "MAGO", "LADINO"};
-        int escolha = JOptionPane.showOptionDialog(this, "Escolha seu personagem", "Escolha",
+        int escolha = JOptionPane.showOptionDialog(janelaBatalhaAtual, "Escolha seu personagem", "Escolha",
                 JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, opcoes, opcoes[0]);
         switch (escolha) {
             case 0:
@@ -118,55 +106,49 @@ public class BatalhaGUI extends JFrame {
         }
     }
 
-    private Classe escolherPersonagemMaquina() {
+    public Classe escolherPersonagemMaquina() {
         int escolha = (int) (Math.random() * 3) + 1;
         switch (escolha) {
             case 1:
-                appendText("A maquina selecionou - BARBARO\n", Color.RED);
+                janelaBatalhaAtual.appendText("A maquina selecionou - BARBARO\n", Color.RED);
                 return new BARBARO();
             case 2:
-                appendText("A maquina selecionou - MAGO\n", Color.RED);
+                janelaBatalhaAtual.appendText("A maquina selecionou - MAGO\n", Color.RED);
                 return new MAGO();
             case 3:
-                appendText("A maquina selecionou - LADINO\n", Color.RED);
+                janelaBatalhaAtual.appendText("A maquina selecionou - LADINO\n", Color.RED);
                 return new LADINO();
             default:
                 return new BARBARO();
         }
     }
 
-    private void iniciarTurnoJogador() {
-        appendText("===========\n");
-        appendText("\n");
-        appendText("Turno do Jogador\n");
-        appendText("Vida do jogador: ", Color.BLACK);
-        appendText(jogador.vida + " HP \n", Color.BLUE);
-        appendText("Energia do jogador: ", Color.BLACK);
-        appendText(jogador.enegia + " ENG\n", new Color(0, 128, 0)); // Um tom de verde mais suave
-        appendText("Vida da Maquina: ", Color.BLACK);
-        appendText(maquina.vida + " HP \n", Color.RED);
-        appendText("\n");
-        atacarButton.setEnabled(true);
-        usarPoderButton.setEnabled(true);
-        curarButton.setEnabled(true);
+    public void iniciarTurnoJogador(JanelaBatalha janelaBatalha) {
+        janelaBatalha.appendText("===========\n");
+        janelaBatalha.appendText("\n");
+        janelaBatalha.appendText("Turno do Jogador\n");
+        janelaBatalha.appendText("Vida do jogador: ", Color.BLACK);
+        janelaBatalha.appendText(jogador.vida + " HP \n", Color.BLUE);
+        janelaBatalha.appendText("Energia do jogador: ", Color.BLACK);
+        janelaBatalha.appendText(jogador.enegia + " ENG\n", new Color(0, 128, 0)); // Um tom de verde mais suave
+        janelaBatalha.appendText("Vida da Maquina: ", Color.BLACK);
+        janelaBatalha.appendText(maquina.vida + " HP \n", Color.RED);
+        janelaBatalha.appendText("\n");
     }
 
-    private void turnoJogador(int acao) {
-        atacarButton.setEnabled(false);
-        usarPoderButton.setEnabled(false);
-        curarButton.setEnabled(false);
+    public void turnoJogador(int acao) {
         if (acao == 1) {
             Arma arma = escolherArma();
             if (arma != null) {
                 atacar(jogador, maquina, arma);
             } else {
-                iniciarTurnoJogador();
+                iniciarTurnoJogador(janelaBatalhaAtual);
                 return;
             }
         } else if (acao == 2) {
             if (jogador.enegia < 1) {
-                appendText("Sem energia suficiente para usar o poder. Escolha outra ação.\n");
-                iniciarTurnoJogador();
+                janelaBatalhaAtual.appendText("Sem energia suficiente para usar o poder.\n");
+                iniciarTurnoJogador(janelaBatalhaAtual);
                 return;
             }
             usarPoder(jogador, maquina);
@@ -180,12 +162,12 @@ public class BatalhaGUI extends JFrame {
                 vidaMaxima = 120;
             }
             if (jogador.vida == vidaMaxima) {
-                appendText("Sua vida está cheia, não é possível curar.\n");
-                iniciarTurnoJogador();
+                janelaBatalhaAtual.appendText("Sua vida está cheia, não é possível curar.\n");
+                iniciarTurnoJogador(janelaBatalhaAtual);
                 return;
             } else if (jogador.enegia < 1) {
-                appendText("Sem energia suficiente para curar. Escolha outra ação.\n");
-                iniciarTurnoJogador();
+                janelaBatalhaAtual.appendText("Sem energia suficiente para curar. Escolha outra ação.\n");
+                iniciarTurnoJogador(janelaBatalhaAtual);
                 return;
             }
             curar(jogador);
@@ -193,9 +175,9 @@ public class BatalhaGUI extends JFrame {
         if (maquina.vida > 0) {
             turnoMaquina();
         }
-        atualizarStatus();
+        atualizarStatus(janelaBatalhaAtual);
         if (jogador.vida > 0 && maquina.vida > 0) {
-            iniciarTurnoJogador();
+            iniciarTurnoJogador(janelaBatalhaAtual);
         }
     }
 
@@ -222,11 +204,11 @@ public class BatalhaGUI extends JFrame {
                     armaJogador = new Adaga();
                     break;
                 default:
-                    appendText("Erro: ID de arma inválido.\n");
+                    janelaBatalhaAtual.appendText("Erro: ID de arma inválido.\n");
                     return null;
             }
         } catch (Exception e) {
-            appendText("Erro ao carregar a imagem da arma.\n");
+            janelaBatalhaAtual.appendText("Erro ao carregar a imagem da arma.\n");
             e.printStackTrace();
             return null;
         }
@@ -244,7 +226,7 @@ public class BatalhaGUI extends JFrame {
         group.add(buttons[0]);
         panel.add(buttons[0]);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Escolha sua arma", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(janelaBatalhaAtual, panel, "Escolha sua arma", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             return armaJogador;
         } else {
@@ -256,21 +238,21 @@ public class BatalhaGUI extends JFrame {
         try {
             ImageIcon icon = new ImageIcon(getClass().getResource(url));
             if (icon == null || icon.getImageLoadStatus() != MediaTracker.COMPLETE) {
-                appendText("Imagem não encontrada: " + url + "\n");
+                janelaBatalhaAtual.appendText("Imagem não encontrada: " + url + "\n");
                 return null;
             }
             Image image = icon.getImage();
             Image newimg = image.getScaledInstance(100, 100, java.awt.Image.SCALE_SMOOTH);
             return new ImageIcon(newimg);
         } catch (Exception e) {
-            appendText("Erro ao carregar a imagem: " + url + "\n");
+            janelaBatalhaAtual.appendText("Erro ao carregar a imagem: " + url + "\n");
             e.printStackTrace();
             return null;
         }
     }
 
     private void turnoMaquina() {
-        appendText("Turno da Máquina\n");
+        janelaBatalhaAtual.appendText("Turno da Máquina\n");
         Color maquinaColor = Color.RED;
         Color jogadorColor = Color.BLUE;
 
@@ -281,7 +263,7 @@ public class BatalhaGUI extends JFrame {
             atacar(maquina, jogador, arma);
         } else if (escolha == 2) {
             if (maquina.enegia < 1) {
-                appendText("A Maquina está sem energia suficiente para usar o poder. Tentando atacar com arma.\n");
+                janelaBatalhaAtual.appendText("A Maquina está sem energia suficiente para usar o poder. Tentando atacar com arma.\n");
                 Arma arma = escolherArmaMaquina();
                 atacar(maquina, jogador, arma);
             } else {
@@ -298,11 +280,11 @@ public class BatalhaGUI extends JFrame {
             }
 
             if (maquina.vida == vidaMaxima) {
-                appendText("A Maquina está com a vida cheia, não pode curar.\n");
+                janelaBatalhaAtual.appendText("A Maquina está com a vida cheia, não pode curar.\n");
                 Arma arma = escolherArmaMaquina();
                 atacar(maquina, jogador, arma);
             } else if (maquina.enegia < 1) {
-                appendText("A Maquina está sem energia suficiente para curar. Tentando atacar com arma.\n");
+                janelaBatalhaAtual.appendText("A Maquina está sem energia suficiente para curar. Tentando atacar com arma.\n");
                 Arma arma = escolherArmaMaquina();
                 atacar(maquina, jogador, arma);
             } else {
@@ -339,19 +321,19 @@ public class BatalhaGUI extends JFrame {
         String nomeDefensor = (defensor == jogador) ? "Você(" + defensor.nameClasse + ")" : "A Maquina(" + defensor.nameClasse + ")";
         Color atacanteColor = (atacante == jogador) ? Color.BLUE : Color.RED;
         Color defensorColor = (defensor == jogador) ? Color.BLUE : Color.RED;
-        appendText(nomeAtacante , atacanteColor);
-        appendText(" atacou com " + arma.tipoArma + " causando ", Color.BLACK);
-        appendText(resultado + " de dano.\n", atacanteColor);
-        appendText(nomeDefensor , defensorColor);
-        appendText(nomeDefensor + " recebeu ", Color.BLACK);
-        appendText(resultado + " de dano de arma e está com ", Color.BLACK);
-        appendText(defensor.vida + " de vida.\n", defensorColor);
-        appendText("===========\n");
+        janelaBatalhaAtual.appendText(nomeAtacante , atacanteColor);
+        janelaBatalhaAtual.appendText(" atacou com " + arma.tipoArma + " causando ", Color.BLACK);
+        janelaBatalhaAtual.appendText(resultado + " de dano.\n", atacanteColor);
+        janelaBatalhaAtual.appendText(nomeDefensor , defensorColor);
+        janelaBatalhaAtual.appendText(nomeDefensor + " recebeu ", Color.BLACK);
+        janelaBatalhaAtual.appendText(resultado + " de dano de arma e está com ", Color.BLACK);
+        janelaBatalhaAtual.appendText(defensor.vida + " de vida.\n", defensorColor);
+        janelaBatalhaAtual.appendText("===========\n");
     }
 
     private void usarPoder(Classe atacante, Classe defensor) {
         if (atacante.enegia < 1) {
-            appendText("Sem energia suficiente para usar o poder.\n");
+            janelaBatalhaAtual.appendText("Sem energia suficiente para usar o poder.\n");
             return;
         }
         int danoAp = atacante.Poder;
@@ -369,10 +351,10 @@ public class BatalhaGUI extends JFrame {
         defensor.vida -= resultadoAp;
         atacante.enegia -= 1;
 
-        appendText(nomeAtacante + " usou seu poder causando ", Color.BLACK);
-        appendText(resultadoAp + " de dano.\n", atacanteColor);
-        appendText(nomeDefensor + " recebeu " + resultadoAp + " de dano do poder Especial e está com ", Color.BLACK);
-        appendText(defensor.vida + " de vida.\n", defensorColor);
+        janelaBatalhaAtual.appendText(nomeAtacante + " usou seu poder causando ", Color.BLACK);
+        janelaBatalhaAtual.appendText(resultadoAp + " de dano.\n", atacanteColor);
+        janelaBatalhaAtual.appendText(nomeDefensor + " recebeu " + resultadoAp + " de dano do poder Especial e está com ", Color.BLACK);
+        janelaBatalhaAtual.appendText(defensor.vida + " de vida.\n", defensorColor);
         atacante.enegia -= 1;
     }
 
@@ -400,33 +382,85 @@ public class BatalhaGUI extends JFrame {
         Color curadorColor = (curador == jogador) ? Color.GREEN : Color.GREEN;
 
         curador.enegia -= 1;
-        appendText(nomeCurador + " curou " + cura + " de vida.\n", curadorColor);
-        appendText(nomeCurador + " está com " + curador.vida + " de vida e " + curador.enegia + " de energia.\n", curadorColor);
-        appendText("===========\n");
+        janelaBatalhaAtual.appendText(nomeCurador + " curou " + cura + " de vida.\n", curadorColor);
+        janelaBatalhaAtual.appendText(nomeCurador + " está com " + curador.vida + " de vida e " + curador.enegia + " de energia.\n", curadorColor);
+        janelaBatalhaAtual.appendText("===========\n");
     }
 
-    private void atualizarStatus() {
+    private void atualizarStatus(JanelaBatalha janelaBatalha) {
         if (jogador.vida <= 0) {
-            appendText("A máquina venceu!\n", Color.RED);
-            desabilitarBotoes();
+            janelaBatalha.appendText("A máquina venceu!\n", Color.RED);
+            fecharJanelaBatalha(janelaBatalha);
         } else if (maquina.vida <= 0) {
-            appendText("Você venceu!\n", Color.BLUE);
-            desabilitarBotoes();
+            janelaBatalha.appendText("Você venceu!\n", Color.BLUE);
+            fecharJanelaBatalha(janelaBatalha);
         }
     }
 
-    private void desabilitarBotoes() {
-        atacarButton.setEnabled(false);
-        usarPoderButton.setEnabled(false);
-        curarButton.setEnabled(false);
+    private void fecharJanelaBatalha(JanelaBatalha janelaBatalha) {
+        janelaBatalha.dispose();
+        SwingUtilities.invokeLater(() -> mundoLivre.requestFocusInWindow());
+        verificarFimDeJogoAposBatalha(); // Adiciona esta linha
+    }
+
+    public void verificarFimDeJogo() {
+        if (mundoLivre.inimigos.isEmpty() && !jogoTerminou && !ultimaBatalhaIniciada) {
+            ultimaBatalhaIniciada = true;
+            // Iniciar a última batalha aqui, se necessário
+            // Após a batalha, exibir a mensagem de parabéns
+        }
+    }
+
+    private void verificarFimDeJogoAposBatalha() {
+        if (mundoLivre.inimigos.isEmpty() && !jogoTerminou && ultimaBatalhaIniciada) {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(this, "Parabéns! Você limpou o mundo livre!", "Fim de Jogo", JOptionPane.INFORMATION_MESSAGE);
+                int escolha = JOptionPane.showOptionDialog(this, "Deseja jogar novamente?", "Fim de Jogo",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+                        new Object[]{"Sim", "Não"}, "Sim");
+
+                if (escolha == JOptionPane.YES_OPTION) {
+                    reiniciarJogo();
+                } else {
+                    System.exit(0);
+                }
+            });
+            jogoTerminou = true;
+        }
+    }
+
+    private void reiniciarJogo() {
+        mundoLivre.jogadorX = 100;
+        mundoLivre.jogadorY = 100;
+        mundoLivre.inimigos.clear();
+        mundoLivre.gerarInimigosIniciais();
+        mundoLivre.emBatalha = false;
+        jogoTerminou = false;
+        ultimaBatalhaIniciada = false;
+        SwingUtilities.invokeLater(() -> mundoLivre.requestFocusInWindow());
+    }
+
+    public MundoLivre getMundoLivre() {
+        return mundoLivre;
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new BatalhaGUI().setVisible(true);
-            }
-        });
+        SwingUtilities.invokeLater(() -> new BatalhaGUI().setVisible(true));
+    }
+
+    public boolean isJogoTerminou() {
+        return jogoTerminou;
+    }
+
+    public void setJogoTerminou(boolean jogoTerminou) {
+        this.jogoTerminou = jogoTerminou;
+    }
+
+    public boolean isUltimaBatalhaIniciada() {
+        return ultimaBatalhaIniciada;
+    }
+
+    public void setUltimaBatalhaIniciada(boolean ultimaBatalhaIniciada) {
+        this.ultimaBatalhaIniciada = ultimaBatalhaIniciada;
     }
 }
